@@ -57,18 +57,34 @@
 }
 
 .activity-name {
+    --activity-name-max-font-size: 16px;
+    --activity-name-min-font-size: 13px;
+    --activity-name-line-height: 1.1;
+
     width: 100%;
-    height: 3em;
-    padding: 5px;
+    height: 48px;
+    flex: none;
+    padding: 2px 5px;
     margin: 0;
-    font-size: 16px;
+    font-size: var(--activity-name-max-font-size);
+    line-height: var(--activity-name-line-height);
     font-weight: bold;
     color: var(--color-dafic);
+    box-sizing: border-box;
+    overflow-wrap: break-word;
 
     display: flex;
     align-items: center;
+    align-items: safe center;
     justify-content: center;
     text-align: center;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
 }
 
 .activity-description {
@@ -91,14 +107,17 @@
     scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
 }
 
+.activity-name::-webkit-scrollbar,
 .activity-description::-webkit-scrollbar {
     width: 6px;
 }
 
+.activity-name::-webkit-scrollbar-track,
 .activity-description::-webkit-scrollbar-track {
     background: transparent;
 }
 
+.activity-name::-webkit-scrollbar-thumb,
 .activity-description::-webkit-scrollbar-thumb {
     background-color: rgba(0, 0, 0, 0.35);
     border-radius: 3px;
