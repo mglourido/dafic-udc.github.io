@@ -1,26 +1,26 @@
 /**
- * El script se encarga de crear un encabezado de mensaje de noticias en la página web. Este encabezado se genera dinámicamente a partir de los datos obtenidos de un archivo JSON (`news_message.json`). El encabezado puede mostrar un mensaje, aplicar estilos personalizados y permitir la navegación a un elemento específico en la página al hacer clic en él...
- * 
- * Funcionalidades y parametros:
- *  "text": Permite definir el texto que se mostrará en el encabezado. Puede ser una cadena de texto simple o una referencia a otro archivo JSON o una fecha.
- * "array-index": Permite especificar un índice de un array en caso de que el texto sea un array de datos (text: '$ruta', si apunta a un JSON de actividades recibira un array).
- * "dynamic": Permite definir si el texto es dinámico y se actualiza automáticamente(sirve para cuando pones una fecha en el 'text, en vez de poner la fecha pondrá una cuenta atrás inteligente [puede poner de texto la fecha, cantidad de diads, cuenta a tras de diad:horas:minutos ... ; lo más cómodo para el usuario]).
- * "floating-title": Permite definir un título flotante que se mostrará al pasar el cursor sobre el encabezado.
- * "color": Permite definir el color del texto del encabezado.
- * "decoration": Permite definir la decoración del texto del encabezado (por ejemplo, subrayado).
- * "anchored": Permite definir un selector CSS de un elemento en la página al que se desplazará suavemente al hacer clic en el encabezado.
+ * This script creates a news message header on the web page. This header is generated dynamically from data obtained from a JSON file (`news_message.json`). The header can display a message, apply custom styles and allow navigation to a specific element on the page when clicked on...
+ *
+ * Features and parameters:
+ *  "text": Allows defining the text that will be shown in the header. It can be a simple text string, a reference to another JSON file, or a date.
+ * "array-index": Allows specifying an array index in case the text is an array of data (text: '$path', if it points to an activities JSON it will receive an array).
+ * "dynamic": Allows defining whether the text is dynamic and updates automatically (used for when you put a date in 'text'; instead of showing the date it will show a smart countdown [it can show as text the date, number of days, countdown of days:hours:minutes ... ; whatever is most convenient for the user]).
+ * "floating-title": Allows defining a floating title that will be shown when hovering over the header.
+ * "color": Allows defining the text color of the header.
+ * "decoration": Allows defining the text decoration of the header (for example, underline).
+ * "anchored": Allows defining a CSS selector of an element on the page that will be smoothly scrolled to when clicking the header.
 */
 
 const dataUrlMessage = "/data/news_message.json";
 function parseNewsDate(rawDate) {
-    // Devuelve { text, dinamicFree } o null si no hay fecha
+    // Returns { text, dinamicFree } or null if there is no date
     if (!rawDate) return null;
 
     let data = rawDate.replaceAll("/", "-");
     const parse = data.split("-");
     const dinamicFree = data.indexOf("?") === -1;
 
-    if (parse.length === 2) { // averiguar año-mes-dia
+    if (parse.length === 2) { // figure out year-month-day
         let año, mes, dia;
 
         for (const part of parse) {
@@ -49,14 +49,14 @@ function parseNewsDate(rawDate) {
 }
 
 function parseNewsDate(rawDate) {
-    // Devuelve { text, dinamicFree } o null si no hay fecha
+    // Returns { text, dinamicFree } or null if there is no date
     if (!rawDate) return null;
 
     let data = rawDate.replaceAll("/", "-");
     const parse = data.split("-");
     const dinamicFree = data.indexOf("?") === -1;
 
-    if (parse.length === 2) { // averiguar año-mes-dia
+    if (parse.length === 2) { // figure out year-month-day
         let año, mes, dia;
 
         for (const part of parse) {
@@ -100,7 +100,7 @@ async function CreateNewsMessageHeader() {
 
     if (newsMessageData.text.trim() === '') return;
 
-    let newsName; // nombre de la noticia, usado luego como fallback de anclaje
+    let newsName; // name of the news item, used later as anchor fallback
 
     if (newsMessageData.text.indexOf("$") === 0) {
         // ad anchor, by path
@@ -149,7 +149,7 @@ async function CreateNewsMessageHeader() {
     if (newsMessageData.anchored) {
         targetElement = document.querySelector(newsMessageData.anchored);
     } else if (newsName) {
-        // sin selector explícito: anclar a la noticia cuyo título coincida
+        // no explicit selector: anchor to the news item whose title matches
         targetElement = Array.from(document.body.querySelectorAll(".activity-link"))
             .find(el => el.querySelector(".activity-name")?.textContent === newsName);
     }
@@ -161,7 +161,7 @@ async function CreateNewsMessageHeader() {
     }
 
     if (newsMessageData.floatingTitle) {
-        // fuerza poner el title que viene en el mensaje, aunque se cambiase antes
+        // force setting the title that comes in the message, even if it was changed before
         newsMessageHeader.title = newsMessageData.floatingTitle;
     }
 }
@@ -175,7 +175,7 @@ const fetchJSON2 = async (dataUrl) => {
     }
 };
 
-//actualiza el contenido del mensaje
+//updates the content of the message
 function refreshNewsMessageDinamicDate(element,date){
     const refreshInterval=setInterval(()=>{
         const endDate = new Date(date);
@@ -183,16 +183,16 @@ function refreshNewsMessageDinamicDate(element,date){
         const timeDiff = endDate - now;
         
         if (timeDiff <= 0) {
-            //mismo dia, mostrar mensaje de que esta ocurriendo o ha ocurrido
+            //same day, show message that it is happening or has happened
             if(endDate.getDay()==now.getDay()){
                 element.textContent="Es Hoy!"
             }
-            else {//para el ciclo de vida del mensaje y lo quita del html. Ese ciclo no se continua durante la misma sesion (es queriendo)
+            else {//stops the message lifecycle and removes it from the html. This cycle does not continue during the same session (intentionally)
                 element.remove()
                 clearInterval(refreshInterval)
             }
         }
-        else if(((now/1000/60/60/24)-(endDate/1000/60/60/24))<10){//menos de 10dias ,intervalo : (10,0) dias
+        else if(((now/1000/60/60/24)-(endDate/1000/60/60/24))<10){//less than 10 days, interval: (10,0) days
             element.textContent="En "+(now/1000/60/60/24)-(endDate/1000/60/60/24)+" días"
         }
         else {
