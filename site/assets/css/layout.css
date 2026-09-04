@@ -66,6 +66,32 @@ header {
     border: 2px solid white;
 }
 
+.news-message-header {
+    max-width: calc(100% - 2em);
+    margin: 0 1em 0.7em;
+    padding: 0.4em 0.8em;
+
+    font-size: 0.8rem;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    cursor: pointer;
+}
+
+.news-message-header::before {
+    content: "📣";
+    margin-right: 0.4em;
+}
+
+@media (min-width: 700px) {
+    .news-message-header {
+        max-width: 22em;
+        margin: 0.7em 1em 0.7em 0;
+    }
+}
+
 /* END HEADER */
 
 main {
