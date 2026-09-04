@@ -12,187 +12,113 @@
 */
 
 const dataUrlMessage = "/data/news_message.json";
-async function CreateNewsMessageHeader() {
-    const newsMessageData =await fetchJSON(dataUrlMessage);
-    if(!newsMessageData || !newsMessageData.text || !(typeof newsMessageData.text === 'string')) return;
+function parseNewsDate(rawDate) {
+    // Devuelve { text, dinamicFree } o null si no hay fecha
+    if (!rawDate) return null;
 
-    const newsMessageHeader = document.getElementById('news-message-header');
+    let data = rawDate.replaceAll("/", "-");
+    const parse = data.split("-");
+    const dinamicFree = data.indexOf("?") === -1;
+
+    if (parse.length === 2) { // averiguar año-mes-dia
+        let año, mes, dia;
+
+        for (const part of parse) {
+            if (part.length === 4 && !año) {
+                año = part;
+            } else if (Number(part) > 12) {
+                dia = part;
+            } else if (dia !== undefined && !mes) {
+                mes = part;
+            }
+        }
+
+        if (!año) {
+            año = new Date().getFullYear();
+        }
+
+        if (!dia && !mes) {
+            dia = parse[0];
+            mes = parse[1];
+        }
+
+        data = `${dia}-${mes}-${año}`;
+    }
+
+    return { text: data, dinamicFree: parse.length === 1 ? false : dinamicFree };
+}
+
+async function CreateNewsMessageHeader() {
+    const newsMessageData = await fetchJSON(dataUrlMessage);
+    if (!newsMessageData || !newsMessageData.text || typeof newsMessageData.text !== 'string') return;
+
+    // create the newsMessageHeader component in the header
+    const newsMessageHeaderElement = document.createElement('div');
+    newsMessageHeaderElement.className = 'news-message-header';
+    document.querySelector("header").appendChild(newsMessageHeaderElement);
+
+    const newsMessageHeader = newsMessageHeaderElement;
 
     newsMessageHeader.style.color = newsMessageData.color || '#326e76';
     newsMessageHeader.style.textDecoration = newsMessageData.decoration || '';
 
-    //text event 
-    if(newsMessageData.text.trim() === '') {return;}
+    if (newsMessageData.text.trim() === '') return;
 
-        if((newsMessageData.text).indexOf("$") === 0) {//ad anchor, by path
-            let textData = await fetchJSON(newsMessageData.text.substring(1));
-            textData = textData[newsMessageData["array-index"]] || undefined;
+    if (newsMessageData.text.indexOf("$") === 0) {
+        // ad anchor, by path
+        let textData = await fetchJSON(newsMessageData.text.substring(1));
+        textData = textData[newsMessageData["array-index"]];
 
-            if(Array.isArray(textData)) {
-                if(textData[2]!=""){//[2] es la fecha
-                    let data=textData[2].replaceAll("/","-")
-                    const parse=data.split("-")
-                    const dinamicFree=data.indexOf("?")==-1 ? true: false//bloquea el "dynamic" para evitar inconsistencias
+        if (!textData) return;
 
-                    if(parse.length===2){//averiguar año-mes-dia
-                        let año;
-                        let mes;
-                        let dia;
+        if (Array.isArray(textData)) {
+            const name = textData[0];
+            const description = textData[1];
+            const rawDate = textData[2];
 
-                        for(i in parse){
-                            if(i.length===4 && !año){
-                                año=i
-                            }
-                            else if(i>12){
-                                dia=i
-                            }
-                            else if(dia!=undefined && !mes){
-                                mes=i
-                            }
-                        }
+            newsMessageHeader.textContent = name;
+            newsMessageHeader.title = description;
 
-                        if(!año){
-                            año==new Date().getFullYear()
-                        }
-
-                        if(!dia && !mes){
-                            dia=parse[0]
-                            mes=parse[1]
-                        }
-
-                        data=dia+"-"+mes+"-"+año
-                    }
-                    else if(parse.length===1){dinamicFree=false;}
-
-                    newsMessageHeader.textContent=data.replaceAll("-", " /");
-                    newsMessageHeader.title=textData[1]//descripcion
-
-                    if(newsMessageData.dynamic && dinamicFree){
-                        refreshNewsMessageDinamicDate(newsMessageHeader,data);
-                    }
-                    else{
-                        newsMessageHeader.textContent = textData[0];
-                    }
-                }
-                newsMessageHeader.textContent = textData[0];//nombre
-                newsMessageHeader.title=textData[2]//fecha
+            const parsed = parseNewsDate(rawDate);
+            if (parsed && newsMessageData.dynamic && parsed.dinamicFree) {
+                refreshNewsMessageDinamicDate(newsMessageHeader, parsed.text);
             }
-            else if(typeof textData === 'object' && textData !== null) {
-                if(textData["date"]!=""){
-                    let data=textData["date"].replaceAll("/","-")
-                    const parse=data.split("-")
-                    const dinamicFree=data.indexOf("?")==-1 ? true: false//bloquea el "dynamic" para evitar inconsistencias
+        } else if (typeof textData === 'object' && textData !== null) {
+            newsMessageHeader.textContent = textData["name"];
+            newsMessageHeader.title = textData["date"];
 
-                    if(parse.length===2){//averiguar año-mes-dia
-                        let año;
-                        let mes;
-                        let dia;
-
-                        for(i in parse){
-                            if(i.length===4 && !año){
-                                año=i
-                            }
-                            else if(i>12){
-                                dia=i
-                            }
-                            else if(dia!=undefined && !mes){
-                                mes=i
-                            }
-                        }
-
-                        if(!año){
-                            año==new Date().getFullYear()
-                        }
-
-                        if(!dia && !mes){
-                            dia=parse[0]
-                            mes=parse[1]
-                        }
-
-                        data=dia+"-"+mes+"-"+año
-                    }
-                    else if(parse.length===1){dinamicFree=false;}
-
-                    newsMessageHeader.textContent=data.replaceAll("-", " /");
-                    newsMessageHeader.title=textData["date"]
-
-                    if(newsMessageData.dynamic && dinamicFree){
-                        refreshNewsMessageDinamicDate(newsMessageHeader,data);
-                    }
-                    else{
-                        newsMessageHeader.textContent = textData["name"]
-                    }
-                }
-                newsMessageHeader.textContent = textData["name"]
-                newsMessageHeader.title=textData["date"]
-
+            const parsed = parseNewsDate(textData["date"]);
+            if (parsed && newsMessageData.dynamic && parsed.dinamicFree) {
+                refreshNewsMessageDinamicDate(newsMessageHeader, parsed.text);
             }
-            else{return;}
+        } else {
+            return;
         }
-        else if(!isNaN(Date.parse(newsMessageData.text))) {//ad anchor, by date
-            let data=newsMessageData.text.replaceAll("/","-")
-            const parse=data.split("-")
-            const dinamicFree=data.indexOf("?")==-1 ? true: false//bloquea el "dynamic" para evitar inconsistencias
-
-            if(parse.length===2){//averiguar año-mes-dia
-                let año;
-                let mes;
-                let dia;
-
-                for(i in parse){
-                    if(i.length===4 && !año){
-                        año=i
-                    }
-                    else if(i>12){
-                        dia=i
-                    }
-                    else if(dia!=undefined && !mes){
-                        mes=i
-                    }
-                }
-
-                if(!año){
-                    año==new Date().getFullYear()
-                }
-
-                if(!dia && !mes){
-                    dia=parse[0]
-                    mes=parse[1]
-                }
-
-                data=dia+"-"+mes+"-"+año
-            }
-            else if(parse.length===1){dinamicFree=false;}
-
-            if(newsMessageData.dynamic && dinamicFree){
-                refreshNewsMessageDinamicDate(newsMessageHeader,data);
-            }
+    } else if (!isNaN(Date.parse(newsMessageData.text))) {
+        const parsed = parseNewsDate(newsMessageData.text);
+        if (parsed && newsMessageData.dynamic && parsed.dinamicFree) {
+            refreshNewsMessageDinamicDate(newsMessageHeader, parsed.text);
         }
-        else {
-            newsMessageHeader.textContent = newsMessageData.text;
-        }
-
-    // Anchor event triggered by clicking the news message sent to the selected element in the body   
-    const targetElement = document.querySelector(newsMessageData.anchored);
-    newsMessageHeader.addEventListener('click', () => {
-        if (newsMessageData.anchored) {
-            targetElement.scrollIntoView({behavior: 'smooth' ,block: 'center'});
-        }
-    });
-
-    if (newsMessageData.floatingTitle) {//fuerza poner el title que viene en el mensaje, aunque se cambiase antes
-        //element floating title
-        newsMessageHeader.title = newsMessageData.floatingTitle;
+    } else {
+        newsMessageHeader.textContent = newsMessageData.text;
     }
 
-    //create the newsMessageHeader component in the header
-    const newsMessageHeaderElement = document.createElement('div');
-    newsMessageHeaderElement.className = 'news-message-header';
-    newsMessageHeaderElement.appendChild(newsMessageHeader);
-    document.body.appendChild(newsMessageHeaderElement);
-}
+    // Anchor event triggered by clicking the news message, sent to the selected element in the body
+    if (newsMessageData.anchored) {
+        const targetElement = document.querySelector(newsMessageData.anchored);
+        if (targetElement) {
+            newsMessageHeader.addEventListener('click', () => {
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        }
+    }
 
-const fetchJSON = async (dataUrl) => {
+    if (newsMessageData.floatingTitle) {
+        // fuerza poner el title que viene en el mensaje, aunque se cambiase antes
+        newsMessageHeader.title = newsMessageData.floatingTitle;
+    }
+}
+const fetchJSON2 = async (dataUrl) => {
 
     const response = await fetch(dataUrl);
     if (response.ok) {
