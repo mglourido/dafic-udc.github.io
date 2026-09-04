@@ -21,28 +21,28 @@ function parseNewsDate(rawDate) {
     const dinamicFree = data.indexOf("?") === -1;
 
     if (parse.length === 2) { // figure out year-month-day
-        let año, mes, dia;
+        let year, month, day;
 
         for (const part of parse) {
-            if (part.length === 4 && !año) {
-                año = part;
+            if (part.length === 4 && !year) {
+                year = part;
             } else if (Number(part) > 12) {
-                dia = part;
-            } else if (dia !== undefined && !mes) {
-                mes = part;
+                day = part;
+            } else if (day !== undefined && !month) {
+                month = part;
             }
         }
 
-        if (!año) {
-            año = new Date().getFullYear();
+        if (!year) {
+            year = new Date().getFullYear();
         }
 
-        if (!dia && !mes) {
-            dia = parse[0];
-            mes = parse[1];
+        if (!day && !month) {
+            day = parse[0];
+            month = parse[1];
         }
 
-        data = `${dia}-${mes}-${año}`;
+        data = `${day}-${month}-${year}`;
     }
 
     return { text: data, dinamicFree: parse.length === 1 ? false : dinamicFree };
@@ -57,28 +57,28 @@ function parseNewsDate(rawDate) {
     const dinamicFree = data.indexOf("?") === -1;
 
     if (parse.length === 2) { // figure out year-month-day
-        let año, mes, dia;
+        let year, month, day;
 
         for (const part of parse) {
-            if (part.length === 4 && !año) {
-                año = part;
+            if (part.length === 4 && !year) {
+                year = part;
             } else if (Number(part) > 12) {
-                dia = part;
-            } else if (dia !== undefined && !mes) {
-                mes = part;
+                day = part;
+            } else if (day !== undefined && !month) {
+                month = part;
             }
         }
 
-        if (!año) {
-            año = new Date().getFullYear();
+        if (!year) {
+            year = new Date().getFullYear();
         }
 
-        if (!dia && !mes) {
-            dia = parse[0];
-            mes = parse[1];
+        if (!day && !month) {
+            day = parse[0];
+            month = parse[1];
         }
 
-        data = `${dia}-${mes}-${año}`;
+        data = `${day}-${month}-${year}`;
     }
 
     return { text: data, dinamicFree: parse.length === 1 ? false : dinamicFree };
