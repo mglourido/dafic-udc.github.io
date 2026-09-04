@@ -48,6 +48,42 @@ function parseNewsDate(rawDate) {
     return { text: data, dinamicFree: parse.length === 1 ? false : dinamicFree };
 }
 
+function parseNewsDate(rawDate) {
+    // Devuelve { text, dinamicFree } o null si no hay fecha
+    if (!rawDate) return null;
+
+    let data = rawDate.replaceAll("/", "-");
+    const parse = data.split("-");
+    const dinamicFree = data.indexOf("?") === -1;
+
+    if (parse.length === 2) { // averiguar año-mes-dia
+        let año, mes, dia;
+
+        for (const part of parse) {
+            if (part.length === 4 && !año) {
+                año = part;
+            } else if (Number(part) > 12) {
+                dia = part;
+            } else if (dia !== undefined && !mes) {
+                mes = part;
+            }
+        }
+
+        if (!año) {
+            año = new Date().getFullYear();
+        }
+
+        if (!dia && !mes) {
+            dia = parse[0];
+            mes = parse[1];
+        }
+
+        data = `${dia}-${mes}-${año}`;
+    }
+
+    return { text: data, dinamicFree: parse.length === 1 ? false : dinamicFree };
+}
+
 async function CreateNewsMessageHeader() {
     const newsMessageData = await fetchJSON(dataUrlMessage);
     if (!newsMessageData || !newsMessageData.text || typeof newsMessageData.text !== 'string') return;
@@ -64,6 +100,8 @@ async function CreateNewsMessageHeader() {
 
     if (newsMessageData.text.trim() === '') return;
 
+    let newsName; // nombre de la noticia, usado luego como fallback de anclaje
+
     if (newsMessageData.text.indexOf("$") === 0) {
         // ad anchor, by path
         let textData = await fetchJSON(newsMessageData.text.substring(1));
@@ -76,6 +114,7 @@ async function CreateNewsMessageHeader() {
             const description = textData[1];
             const rawDate = textData[2];
 
+            newsName = name;
             newsMessageHeader.textContent = name;
             newsMessageHeader.title = description;
 
@@ -84,6 +123,7 @@ async function CreateNewsMessageHeader() {
                 refreshNewsMessageDinamicDate(newsMessageHeader, parsed.text);
             }
         } else if (typeof textData === 'object' && textData !== null) {
+            newsName = textData["name"];
             newsMessageHeader.textContent = textData["name"];
             newsMessageHeader.title = textData["date"];
 
@@ -95,6 +135,7 @@ async function CreateNewsMessageHeader() {
             return;
         }
     } else if (!isNaN(Date.parse(newsMessageData.text))) {
+        // ad anchor, by date
         const parsed = parseNewsDate(newsMessageData.text);
         if (parsed && newsMessageData.dynamic && parsed.dinamicFree) {
             refreshNewsMessageDinamicDate(newsMessageHeader, parsed.text);
@@ -104,13 +145,19 @@ async function CreateNewsMessageHeader() {
     }
 
     // Anchor event triggered by clicking the news message, sent to the selected element in the body
+    let targetElement;
     if (newsMessageData.anchored) {
-        const targetElement = document.querySelector(newsMessageData.anchored);
-        if (targetElement) {
-            newsMessageHeader.addEventListener('click', () => {
-                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
-        }
+        targetElement = document.querySelector(newsMessageData.anchored);
+    } else if (newsName) {
+        // sin selector explícito: anclar a la noticia cuyo título coincida
+        targetElement = Array.from(document.body.querySelectorAll(".activity-link"))
+            .find(el => el.querySelector(".activity-name")?.textContent === newsName);
+    }
+
+    if (targetElement) {
+        newsMessageHeader.addEventListener('click', () => {
+            targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
     }
 
     if (newsMessageData.floatingTitle) {
